@@ -1,8 +1,14 @@
 
 # RMON – Raspberry Pi Terminal Monitor
 
-🖥️ **RMON** is a terminal-based system monitor for **Raspberry Pi**, inspired by `nmon`, with real-time display of CPU, memory, GPIO states, I2C devices, and more.  
+**RMON** is a terminal-based system monitor for **Raspberry Pi**, inspired by `nmon`, with real-time display of CPU, memory, GPIO states, I2C devices, and more.  
 It features a retro ASCII interface with vertical bar charts and section-based color coding.
+
+ ____  __  __  ____  _   _
+|  _ \|  \/  |/ __ \| \ | |
+| |_) | |\/| | |  | |  \| |
+|  _ <| |  | | |  | | |\  |
+|_| \_\_|  |_|\____/|_| \_|
 
 ---
 
@@ -65,22 +71,6 @@ sudo python3 rmon.py
 | GPIO    | States of GPIO pins (ON/OFF/N/A/RES)   |
 
 > GPIO pins monitored: BCM 4–27 (excluding 2 and 3, reserved for I2C)
-
----
-
-## 🖼️ Example
-
-```
- ____  __  __  ____  _   _
-|  _ \|  \/  |/ __ \| \ | |
-| |_) | |\/| | |  | |  \| |
-|  _ <| |  | | |  | | |\  |
-|_| \_\_|  |_|\____/|_| \_|
-         by AAB
-
-Raspberry Pi Monitor (press 'q' to quit)
-...
-```
 
 ---
 
