@@ -93,6 +93,9 @@ Developed by **AAB**, built for Raspberry Pi makers, tinkerers, and embedded sys
 
 ---
 
+![image](https://github.com/user-attachments/assets/8a3131ad-3c91-406d-ac4d-b0193f2e6744)
+
+
 ## 📝 License
 
 MIT License. Free to use, modify, and share.
