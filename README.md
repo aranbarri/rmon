@@ -6,7 +6,7 @@ It features a retro ASCII interface with vertical bar charts and section-based c
 
 ---
 
-## 📦 Features
+##  Features
 
 - `nmon`-style system monitoring in the terminal (via `curses`)
 - Per-core CPU usage and memory load shown with vertical `X` bars
@@ -19,7 +19,7 @@ It features a retro ASCII interface with vertical bar charts and section-based c
 
 ---
 
-## 🧰 Requirements
+##  Requirements
 
 - Raspberry Pi OS or similar (tested on Pi 3, 4, 5)
 - Python 3.x
@@ -32,7 +32,7 @@ It features a retro ASCII interface with vertical bar charts and section-based c
 
 ---
 
-## 🚀 Installation
+##  Installation
 
 ```bash
 sudo apt update
