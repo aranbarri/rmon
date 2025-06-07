@@ -5,7 +5,7 @@
 It features a retro ASCII interface with vertical bar charts and section-based color coding.
 
 ````
-____  __  __  ____  _   _
+_____  __  __  ____  _   _
 |  _ \|  \/  |/ __ \| \ | |
 | |_) | |\/| | |  | |  \| |
 |  _ <| |  | | |  | | |\  |
