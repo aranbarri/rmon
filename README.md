@@ -10,6 +10,13 @@ ____  __  __  ____  _   _
 | |_) | |\/| | |  | |  \| |
 |  _ <| |  | | |  | | |\  |
 |_| \_\_|  |_|\____/|_| \_|
+
+GPIO                | CPU           | MEM          | DSK        | SYS INFO
+-------------------+---------------+--------------+------------+-----------------
+01 GPIO2   ON      | Core0: 23%    | Used: 43%    | Used: 52%  | Uptime: 1234s
+02 5V      -       | Core1: 18%    | Avail: 123MB | Free: 9GB  | Users: 1
+...                | Temp: 52°C    |              |            | Load: 0.20 0.12
+
 ````
 ---
 
@@ -86,9 +93,6 @@ Want to:
 Fork it or open an issue — contributions are welcome!
 
 ---
-
-![image](https://github.com/user-attachments/assets/8a3131ad-3c91-406d-ac4d-b0193f2e6744)
-
 
 ## 📝 License
 
