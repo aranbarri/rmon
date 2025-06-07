@@ -16,7 +16,7 @@ ____  __  __  ____  _   _
 ##  Features
 
 - `nmon`-style system monitoring in the terminal (via `curses`)
-- Per-core CPU usage and memory load shown with vertical `X` bars
+- Per-core CPU usage and memory load shown with vertical bars
 - Real-time status of **GPIO** pins (input mode, ON/OFF)
 - **I2C** device detection using `i2cdetect`
 - **RaspMesh** detection (checks for `bat0` mesh interface)
