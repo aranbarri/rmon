@@ -45,7 +45,7 @@ Clone and run:
 ```bash
 git clone https://github.com/aranbarri/rmon.git
 cd rmon
-sudo python3 monitor_rpi_logo_red.py
+sudo python3 rmon.py
 ```
 
 > `sudo` is required to access GPIO and I2C.
