@@ -87,12 +87,6 @@ Fork it or open an issue — contributions are welcome!
 
 ---
 
-## 👨‍💻 Author
-
-Developed by **AAB**, built for Raspberry Pi makers, tinkerers, and embedded system enthusiasts.
-
----
-
 ![image](https://github.com/user-attachments/assets/8a3131ad-3c91-406d-ac4d-b0193f2e6744)
 
 
