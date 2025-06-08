@@ -11,6 +11,9 @@ _____  __  __  ____  _   _
 |  _ <| |  | | |  | | |\  |
 |_| \_\_|  |_|\____/|_| \_|
 ````
+
+![image](https://github.com/user-attachments/assets/b3cf133e-a6c2-4c1c-b44c-5dbe83a0f66c)
+
 ---
 
 ##  Features
@@ -72,10 +75,6 @@ sudo python3 rmon.py
 | GPIO    | States of GPIO pins (ON/OFF/N/A/RES)   |
 
 > GPIO pins monitored: BCM 4–27 (excluding 2 and 3, reserved for I2C)
-
----
-
-![image](https://github.com/user-attachments/assets/b3cf133e-a6c2-4c1c-b44c-5dbe83a0f66c)
 
 ---
 
