@@ -54,17 +54,12 @@ def get_uptime():
 def get_load_avg():
     return os.getloadavg()
 
-def get_i2c_devices():
+def get_i2c_matrix():
     try:
         output = subprocess.check_output(['i2cdetect', '-y', '1'], text=True)
-        lines = output.strip().split('\n')[1:]
-        found = []
-        for line in lines:
-            parts = line.split()
-            found += [addr for addr in parts[1:] if addr != '--']
-        return found
+        return output.strip().split('\n')
     except:
-        return ["error"]
+        return ["Error reading I2C"]
 
 def draw_bar_vertical(stdscr, x, y_top, height, percent, color=0):
     bar_height = int((percent / 100.0) * height)
@@ -96,7 +91,6 @@ def draw_screen(stdscr):
         stdscr.erase()
         width = shutil.get_terminal_size().columns
 
-        # Logo
         logo = [
             " ____  __  __  ____  _   _ ",
             "|  _ \\|  \\/  |/ __ \\| \\ | |",
@@ -110,15 +104,15 @@ def draw_screen(stdscr):
         stdscr.addstr(6, 2, "Raspberry Pi Monitor (press 'q' to quit)", curses.color_pair(6))
         stdscr.addstr(6, width - len(hostname) - 10, f"Host: {hostname}", curses.color_pair(6))
 
-        headers = ["CPU", "MEM", "DISK", "NET", "SYS"]
+        headers = ["CPU", "MEM", "SYS", "NET", "DISK"]
         col_width = width // len(headers)
 
         for i, header in enumerate(headers):
             col_start = i * col_width
-            stdscr.addstr(8, col_start + 1, header)
-            stdscr.vline(8, col_start, '|', 14)
+            stdscr.addstr(8, col_start + (col_width - len(header)) // 2, header)
+            if i > 0:
+                stdscr.vline(9, col_start, '|', 12)
 
-        # CPU
         cpus = psutil.cpu_percent(percpu=True)
         step = 4
         for i, usage in enumerate(cpus):
@@ -126,23 +120,10 @@ def draw_screen(stdscr):
             stdscr.addstr(9, x, f"{int(usage)%100:02d}", curses.color_pair(1))
             draw_bar_vertical(stdscr, x, 10, bar_height, usage, 1)
 
-        # MEM
         mem = psutil.virtual_memory().percent
         stdscr.addstr(9, col_width + 1, f"MEM: {mem:5.1f}%", curses.color_pair(2))
-        draw_bar_vertical(stdscr, col_width + 1, 10, bar_height, mem, 2)
+        draw_bar_vertical(stdscr, col_width + 2, 10, bar_height, mem, 2)
 
-        # DISK
-        disk = psutil.disk_usage('/')
-        stdscr.addstr(9, col_width*2 + 1, f"Used: {disk.used // (1024**3)} GB", curses.color_pair(3))
-        stdscr.addstr(10, col_width*2 + 1, f"Free: {disk.free // (1024**3)} GB", curses.color_pair(3))
-        stdscr.addstr(11, col_width*2 + 1, f"{disk.percent}% used", curses.color_pair(3))
-
-        # NET
-        net = psutil.net_io_counters()
-        stdscr.addstr(9, col_width*3 + 1, f"Sent: {net.bytes_sent // (1024**2)} MB", curses.color_pair(6))
-        stdscr.addstr(10, col_width*3 + 1, f"Recv: {net.bytes_recv // (1024**2)} MB", curses.color_pair(6))
-
-        # SYS
         temp = get_cpu_temp()
         freq = get_cpu_freq()
         volt = get_voltage()
@@ -153,31 +134,35 @@ def draw_screen(stdscr):
 
         y_base = 9
         if temp is not None:
-            stdscr.addstr(y_base, col_width*4 + 1, f"Temp: {temp:.1f} degC", curses.color_pair(7)); y_base += 1
+            stdscr.addstr(y_base, col_width*2 + 1, f"Temp: {temp:.1f} C", curses.color_pair(7)); y_base += 1
         if freq is not None:
-            stdscr.addstr(y_base, col_width*4 + 1, f"Freq: {freq} MHz", curses.color_pair(7)); y_base += 1
+            stdscr.addstr(y_base, col_width*2 + 1, f"Freq: {freq} MHz", curses.color_pair(7)); y_base += 1
         if volt is not None:
-            stdscr.addstr(y_base, col_width*4 + 1, f"Volt: {volt}", curses.color_pair(7)); y_base += 1
-        stdscr.addstr(y_base, col_width*4 + 1, f"RaspMesh: {'YES' if raspmesh else 'NO'}", curses.color_pair(7)); y_base += 1
-        stdscr.addstr(y_base, col_width*4 + 1, f"Uptime: {int(uptime//3600)}h", curses.color_pair(7)); y_base += 1
-        stdscr.addstr(y_base, col_width*4 + 1, f"LoadAvg: {load1:.2f}", curses.color_pair(7)); y_base += 1
-        stdscr.addstr(y_base, col_width*4 + 1, f"Processes: {processes}", curses.color_pair(7)); y_base += 1
-        stdscr.addstr(y_base, col_width*4 + 1, f"Host: {hostname}", curses.color_pair(7)); y_base += 1
-        stdscr.addstr(y_base, col_width*4 + 1, f"IP:   {ip}", curses.color_pair(7))
+            stdscr.addstr(y_base, col_width*2 + 1, f"Volt: {volt}", curses.color_pair(7)); y_base += 1
+        stdscr.addstr(y_base, col_width*2 + 1, f"RaspMesh: {'YES' if raspmesh else 'NO'}", curses.color_pair(7)); y_base += 1
+        stdscr.addstr(y_base, col_width*2 + 1, f"Uptime: {int(uptime//3600)}h", curses.color_pair(7)); y_base += 1
+        stdscr.addstr(y_base, col_width*2 + 1, f"LoadAvg: {load1:.2f}", curses.color_pair(7)); y_base += 1
+        stdscr.addstr(y_base, col_width*2 + 1, f"Processes: {processes}", curses.color_pair(7)); y_base += 1
+        stdscr.addstr(y_base, col_width*2 + 1, f"IP:   {ip}", curses.color_pair(7))
 
-        # Separator
+        net = psutil.net_io_counters()
+        stdscr.addstr(9, col_width*3 + 1, f"Sent: {net.bytes_sent // (1024**2)} MB", curses.color_pair(6))
+        stdscr.addstr(10, col_width*3 + 1, f"Recv: {net.bytes_recv // (1024**2)} MB", curses.color_pair(6))
+
+        disk = psutil.disk_usage('/')
+        stdscr.addstr(9, col_width*4 + 1, f"Used: {disk.used // (1024**3)} GB", curses.color_pair(3))
+        stdscr.addstr(10, col_width*4 + 1, f"Free: {disk.free // (1024**3)} GB", curses.color_pair(3))
+        stdscr.addstr(11, col_width*4 + 1, f"{disk.percent}% used", curses.color_pair(3))
+
         stdscr.hline(23, 0, '-', width)
 
-        # I2C Devices
-        devices = get_i2c_devices()
-        if devices and devices[0] != "error":
-            i2c_str = ", ".join([f"0x{addr}" for addr in devices[:8]])
-        else:
-            i2c_str = "None"
-        stdscr.addstr(24, 2, f"I2C Devices Found: {len(devices)} [{i2c_str}]", curses.color_pair(4))
+        matrix = get_i2c_matrix()
+        stdscr.addstr(24, 2, "I2C Matrix:", curses.color_pair(4))
+        for i, line in enumerate(matrix):
+            stdscr.addstr(25 + i, 4, line, curses.color_pair(4))
 
-        # GPIO Layout (vertical)
-        stdscr.addstr(26, 2, "GPIO Layout (physical pins 1–40)", curses.color_pair(5))
+        start_line = 25 + len(matrix) + 1
+        stdscr.addstr(start_line, 2, "GPIO Layout (physical pins 1–40)", curses.color_pair(5))
         for i, (left, right) in enumerate(GPIO_LAYOUT):
             pin1 = 1 + i * 2
             pin2 = 2 + i * 2
@@ -205,11 +190,10 @@ def draw_screen(stdscr):
             else:
                 line += " " * 6
 
-            stdscr.addstr(27 + i, 2, line, curses.color_pair(5))
+            stdscr.addstr(start_line + 1 + i, 2, line, curses.color_pair(5))
 
         stdscr.refresh()
         time.sleep(1)
-
         try:
             if stdscr.getch() == ord('q'):
                 break
@@ -220,3 +204,4 @@ try:
     curses.wrapper(draw_screen)
 finally:
     GPIO.cleanup()
+
