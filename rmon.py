@@ -161,13 +161,33 @@ def draw_screen(stdscr):
         for i, line in enumerate(matrix):
             stdscr.addstr(25 + i, 4, line, curses.color_pair(4))
 
-        start_line = 25 + len(matrix) + 1
+        devices = []
+        for line in matrix:
+            if ':' in line:
+                parts = line.split(':', 1)[1].strip().split()
+                for val in parts:
+                    if val != '--':
+                        devices.append(f"0x{val.lower()}")
+
+        det_start_line = 25 + len(matrix) + 1
+        box_width = 26
+        box_height = len(devices) + 2
+        stdscr.addstr(det_start_line, 2, "+" + "-"*(box_width-2) + "+", curses.color_pair(6))
+        stdscr.addstr(det_start_line + 1, 2, "| Devices [I2C]" + " "*(box_width - len(" Devices I2C") - 3) + "", curses.color_pair(6))
+        for i, dev in enumerate(devices):
+            line = f"| - {dev}" + " "*(box_width - len(dev) - 6) + ""
+            stdscr.addstr(det_start_line + 2 + i, 2, line, curses.color_pair(6))
+        if not devices:
+            stdscr.addstr(det_start_line + 2, 2, "| 0" + " "*(box_width - 10) + "", curses.color_pair(6))
+            box_height += 1
+        stdscr.addstr(det_start_line + box_height, 2, "+" + "-"*(box_width-2) + "+", curses.color_pair(6))
+
+        start_line = det_start_line + box_height + 1
         stdscr.addstr(start_line, 2, "GPIO Layout (physical pins 1–40)", curses.color_pair(5))
         for i, (left, right) in enumerate(GPIO_LAYOUT):
             pin1 = 1 + i * 2
             pin2 = 2 + i * 2
             line = f"({pin1:2}) "
-
             if isinstance(left, int):
                 try:
                     line += f"{'ON':<6}" if GPIO.input(left) else f"{'OFF':<6}"
@@ -177,9 +197,7 @@ def draw_screen(stdscr):
                 line += f"{left:<6}"
             else:
                 line += " " * 6
-
             line += f"({pin2:2}) "
-
             if isinstance(right, int):
                 try:
                     line += f"{'ON':<6}" if GPIO.input(right) else f"{'OFF':<6}"
@@ -189,7 +207,6 @@ def draw_screen(stdscr):
                 line += f"{right:<6}"
             else:
                 line += " " * 6
-
             stdscr.addstr(start_line + 1 + i, 2, line, curses.color_pair(5))
 
         stdscr.refresh()
@@ -204,4 +221,3 @@ try:
     curses.wrapper(draw_screen)
 finally:
     GPIO.cleanup()
-
