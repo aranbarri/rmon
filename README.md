@@ -75,15 +75,7 @@ sudo python3 rmon.py
 
 ---
 
-## ⚙️ Customization
-
-Want to:
-
-- Monitor only GPIO?
-- Add sensors like DHT22, BMP280?
-- Export metrics to CSV, InfluxDB, or MQTT?
-
-Fork it or open an issue — contributions are welcome!
+![image](https://github.com/user-attachments/assets/b3cf133e-a6c2-4c1c-b44c-5dbe83a0f66c)
 
 ---
 
