@@ -4,21 +4,28 @@ import time
 import shutil
 import subprocess
 import os
+import socket
 import RPi.GPIO as GPIO
 
-SAFE_GPIO = list(range(4, 28))
-RESERVED = [2, 3]
+GPIO_LAYOUT = [
+    ("3.3V", "5V"),    (2, "5V"),     (3, "GND"),     (4, 14),      ("GND", 15),
+    (17, 18),          (27, "GND"),   (22, 23),       ("3.3V", 24), (10, "GND"),
+    (9, 25),           (11, 8),       ("GND", 7),     ("ID_SD", "ID_SC"),
+    (5, "GND"),        (6, 12),       (13, "GND"),    (19, 16),     (26, "GND"),
+    (20, 21),
+]
+
+ALL_GPIO_PINS = list(set(pin for pair in GPIO_LAYOUT for pin in pair if isinstance(pin, int)))
 
 GPIO.setmode(GPIO.BCM)
-for pin in SAFE_GPIO:
+for pin in ALL_GPIO_PINS:
     try:
         GPIO.setup(pin, GPIO.IN)
     except:
         pass
 
 def is_part_of_raspmesh():
-    net_ifaces = psutil.net_if_addrs()
-    return 'bat0' in net_ifaces
+    return 'bat0' in psutil.net_if_addrs()
 
 def get_cpu_temp():
     try:
@@ -40,6 +47,12 @@ def get_voltage():
         return output.strip().split("=")[1]
     except:
         return None
+
+def get_uptime():
+    return time.time() - psutil.boot_time()
+
+def get_load_avg():
+    return os.getloadavg()
 
 def get_i2c_devices():
     try:
@@ -73,6 +86,11 @@ def draw_screen(stdscr):
     curses.init_pair(7, curses.COLOR_BLUE, curses.COLOR_BLACK)
 
     bar_height = 10
+    hostname = socket.gethostname()
+    try:
+        ip = socket.gethostbyname(hostname)
+    except:
+        ip = "N/A"
 
     while True:
         stdscr.erase()
@@ -81,15 +99,16 @@ def draw_screen(stdscr):
         # Logo
         logo = [
             " ____  __  __  ____  _   _ ",
-            "|  _ \|  \/  |/ __ \| \ | |",
-            "| |_) | |\/| | |  | |  \| |",
-            "|  _ <| |  | | |  | | |\  |",
-            "|_| \_\_|  |_|\____/|_| \_|"
+            "|  _ \\|  \\/  |/ __ \\| \\ | |",
+            "| |_) | |\\/| | |  | |  \\| |",
+            "|  _ <| |  | | |  | | |\\  |",
+            "|_| \\_\\_|  |_|\\____/|_| \\_|"
         ]
         for i, line in enumerate(logo):
             stdscr.addstr(i, 2, line, curses.color_pair(5))
 
-        stdscr.addstr(6, 2, "Raspberry Pi Monitor (press 'q' to quit)")
+        stdscr.addstr(6, 2, "Raspberry Pi Monitor (press 'q' to quit)", curses.color_pair(6))
+        stdscr.addstr(6, width - len(hostname) - 10, f"Host: {hostname}", curses.color_pair(6))
 
         headers = ["CPU", "MEM", "DISK", "NET", "SYS"]
         col_width = width // len(headers)
@@ -128,55 +147,65 @@ def draw_screen(stdscr):
         freq = get_cpu_freq()
         volt = get_voltage()
         raspmesh = is_part_of_raspmesh()
+        uptime = get_uptime()
+        load1, load5, load15 = get_load_avg()
+        processes = len(psutil.pids())
+
+        y_base = 9
         if temp is not None:
-            stdscr.addstr(9, col_width*4 + 1, f"Temp: {temp:.1f} degC", curses.color_pair(7))
+            stdscr.addstr(y_base, col_width*4 + 1, f"Temp: {temp:.1f} degC", curses.color_pair(7)); y_base += 1
         if freq is not None:
-            stdscr.addstr(10, col_width*4 + 1, f"Freq: {freq} MHz", curses.color_pair(7))
+            stdscr.addstr(y_base, col_width*4 + 1, f"Freq: {freq} MHz", curses.color_pair(7)); y_base += 1
         if volt is not None:
-            stdscr.addstr(11, col_width*4 + 1, f"Volt: {volt}", curses.color_pair(7))
-        stdscr.addstr(12, col_width*4 + 1, f"RaspMesh: {'YES' if raspmesh else 'NO'}", curses.color_pair(7))
+            stdscr.addstr(y_base, col_width*4 + 1, f"Volt: {volt}", curses.color_pair(7)); y_base += 1
+        stdscr.addstr(y_base, col_width*4 + 1, f"RaspMesh: {'YES' if raspmesh else 'NO'}", curses.color_pair(7)); y_base += 1
+        stdscr.addstr(y_base, col_width*4 + 1, f"Uptime: {int(uptime//3600)}h", curses.color_pair(7)); y_base += 1
+        stdscr.addstr(y_base, col_width*4 + 1, f"LoadAvg: {load1:.2f}", curses.color_pair(7)); y_base += 1
+        stdscr.addstr(y_base, col_width*4 + 1, f"Processes: {processes}", curses.color_pair(7)); y_base += 1
+        stdscr.addstr(y_base, col_width*4 + 1, f"Host: {hostname}", curses.color_pair(7)); y_base += 1
+        stdscr.addstr(y_base, col_width*4 + 1, f"IP:   {ip}", curses.color_pair(7))
 
         # Separator
         stdscr.hline(23, 0, '-', width)
 
-        # I2C
+        # I2C Devices
         devices = get_i2c_devices()
-        stdscr.addstr(24, 2, f"I2C Devices Found: {len(devices)}", curses.color_pair(4))
         if devices and devices[0] != "error":
-            for i, addr in enumerate(devices[:8]):
-                stdscr.addstr(25 + (i // 4), 2 + (i % 4) * 12, f"0x{addr}", curses.color_pair(4))
+            i2c_str = ", ".join([f"0x{addr}" for addr in devices[:8]])
         else:
-            stdscr.addstr(25, 2, "No I2C devices found", curses.color_pair(4))
+            i2c_str = "None"
+        stdscr.addstr(24, 2, f"I2C Devices Found: {len(devices)} [{i2c_str}]", curses.color_pair(4))
 
-        # GPIO Physical Layout View
-        GPIO_LAYOUT = [
-            (None, None), (None, None), (2, None), (3, None),
-            (4, 14), (17, 15), (18, 23), (27, 24), (22, 10), (None, 9),
-            (11, 25), (None, 8), (7, 1), (None, 0), (5, 12), (6, 13),
-            (19, 16), (26, 20), (None, 21)
-        ]
-
-        stdscr.addstr(28, 2, "GPIO Layout (physical)", curses.color_pair(5))
+        # GPIO Layout (vertical)
+        stdscr.addstr(26, 2, "GPIO Layout (physical pins 1–40)", curses.color_pair(5))
         for i, (left, right) in enumerate(GPIO_LAYOUT):
-            line = f"({1 + i*2:2}) "
-            if left is not None:
+            pin1 = 1 + i * 2
+            pin2 = 2 + i * 2
+            line = f"({pin1:2}) "
+
+            if isinstance(left, int):
                 try:
-                    val = GPIO.input(left)
-                    lstatus = "ON " if val else "OFF"
+                    line += f"{'ON':<6}" if GPIO.input(left) else f"{'OFF':<6}"
                 except:
-                    lstatus = "N/A"
-                line += f"{lstatus:<6}"
+                    line += f"{'N/A':<6}"
+            elif isinstance(left, str):
+                line += f"{left:<6}"
             else:
-                line += "-----  "
-            line += f"({2 + i*2:2}) "
-            if right is not None:
+                line += " " * 6
+
+            line += f"({pin2:2}) "
+
+            if isinstance(right, int):
                 try:
-                    val = GPIO.input(right)
-                    rstatus = "ON" if val else "OFF"
+                    line += f"{'ON':<6}" if GPIO.input(right) else f"{'OFF':<6}"
                 except:
-                    rstatus = "N/A"
-                line += f"{rstatus}"
-            stdscr.addstr(29 + i, 2, line, curses.color_pair(5))
+                    line += f"{'N/A':<6}"
+            elif isinstance(right, str):
+                line += f"{right:<6}"
+            else:
+                line += " " * 6
+
+            stdscr.addstr(27 + i, 2, line, curses.color_pair(5))
 
         stdscr.refresh()
         time.sleep(1)
@@ -191,4 +220,3 @@ try:
     curses.wrapper(draw_screen)
 finally:
     GPIO.cleanup()
-
