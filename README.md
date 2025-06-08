@@ -24,8 +24,6 @@ It features a retro ASCII interface with vertical bar charts and section-based c
 - **I2C** device detection using `i2cdetect`
 - **RaspMesh** detection (checks for `bat0` mesh interface)
 - System metrics: CPU temperature, frequency, voltage
-- Color-coded sections: CPU, MEM, GPIO, I2C, SYS, etc.
-- ASCII `RMON` logo in red, signed "by AAB"
 
 ---
 
