@@ -154,12 +154,12 @@ def draw_screen(stdscr):
         stdscr.addstr(10, col_width*4 + 1, f"Free: {disk.free // (1024**3)} GB", curses.color_pair(3))
         stdscr.addstr(11, col_width*4 + 1, f"{disk.percent}% used", curses.color_pair(3))
 
-        stdscr.hline(23, 0, '-', width)
+        stdscr.hline(21, 0, '-', width)
 
         matrix = get_i2c_matrix()
-        stdscr.addstr(24, 2, "I2C Matrix:", curses.color_pair(4))
+        stdscr.addstr(22, 2, "I2C Matrix:", curses.color_pair(4))
         for i, line in enumerate(matrix):
-            stdscr.addstr(25 + i, 4, line, curses.color_pair(4))
+            stdscr.addstr(23 + i, 4, line, curses.color_pair(4))
 
         devices = []
         for line in matrix:
@@ -169,7 +169,7 @@ def draw_screen(stdscr):
                     if val != '--':
                         devices.append(f"0x{val.lower()}")
 
-        det_start_line = 25 + len(matrix) + 1
+        det_start_line = 23 + len(matrix) + 1
         box_width = 26
         box_height = len(devices) + 2
         stdscr.addstr(det_start_line, 2, "+" + "-"*(box_width-2) + "+", curses.color_pair(6))
