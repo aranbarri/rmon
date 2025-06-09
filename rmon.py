@@ -96,7 +96,7 @@ def draw_screen(stdscr):
         if height < 30 or width < 80:
             try:
                 stdscr.clear()
-                stdscr.addstr(0, 0, "¡Terminal demasiado pequeño! Agranda la ventana...", curses.color_pair(5))
+                stdscr.addstr(0, 0, "Terminal is too small...", curses.color_pair(5))
                 stdscr.refresh()
             except curses.error:
                 pass
