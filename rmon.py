@@ -1,7 +1,6 @@
 import curses
 import psutil
 import time
-import shutil
 import subprocess
 import os
 import socket
@@ -66,7 +65,10 @@ def draw_bar_vertical(stdscr, x, y_top, height, percent, color=0):
     for i in range(height):
         y = y_top + height - 1 - i
         char = 'O' if i < bar_height else ' '
-        stdscr.addstr(y, x, char, curses.color_pair(color))
+        try:
+            stdscr.addstr(y, x, char, curses.color_pair(color))
+        except curses.error:
+            pass
 
 def draw_screen(stdscr):
     curses.curs_set(0)
@@ -89,7 +91,17 @@ def draw_screen(stdscr):
 
     while True:
         stdscr.erase()
-        width = shutil.get_terminal_size().columns
+        height, width = stdscr.getmaxyx()
+
+        if height < 30 or width < 80:
+            try:
+                stdscr.clear()
+                stdscr.addstr(0, 0, "¡Terminal demasiado pequeño! Agranda la ventana...", curses.color_pair(5))
+                stdscr.refresh()
+            except curses.error:
+                pass
+            time.sleep(1)
+            continue
 
         logo = [
             " ____  __  __  ____  _   _ ",
@@ -99,29 +111,44 @@ def draw_screen(stdscr):
             "|_| \\_\\_|  |_|\\____/|_| \\_|"
         ]
         for i, line in enumerate(logo):
-            stdscr.addstr(i, 2, line, curses.color_pair(5))
+            try:
+                stdscr.addstr(i, 2, line, curses.color_pair(5))
+            except curses.error:
+                pass
 
-        stdscr.addstr(6, 2, "Raspberry Pi Monitor (press 'q' to quit)", curses.color_pair(6))
-        stdscr.addstr(6, width - len(hostname) - 10, f"Host: {hostname}", curses.color_pair(6))
+        try:
+            stdscr.addstr(6, 2, "Raspberry Pi Monitor (press 'q' to quit)", curses.color_pair(6))
+            stdscr.addstr(6, width - len(hostname) - 10, f"Host: {hostname}", curses.color_pair(6))
+        except curses.error:
+            pass
 
         headers = ["CPU", "MEM", "SYS", "NET", "DISK"]
         col_width = width // len(headers)
 
         for i, header in enumerate(headers):
             col_start = i * col_width
-            stdscr.addstr(8, col_start + (col_width - len(header)) // 2, header)
-            if i > 0:
-                stdscr.vline(9, col_start, '|', 12)
+            try:
+                stdscr.addstr(8, col_start + (col_width - len(header)) // 2, header)
+                if i > 0:
+                    stdscr.vline(9, col_start, '|', 12)
+            except curses.error:
+                pass
 
         cpus = psutil.cpu_percent(percpu=True)
         step = 4
         for i, usage in enumerate(cpus):
             x = 1 + i * step
-            stdscr.addstr(9, x, f"{int(usage)%100:02d}", curses.color_pair(1))
+            try:
+                stdscr.addstr(9, x, f"{int(usage)%100:02d}", curses.color_pair(1))
+            except curses.error:
+                pass
             draw_bar_vertical(stdscr, x, 10, bar_height, usage, 1)
 
         mem = psutil.virtual_memory().percent
-        stdscr.addstr(9, col_width + 1, f"MEM: {mem:5.1f}%", curses.color_pair(2))
+        try:
+            stdscr.addstr(9, col_width + 1, f"MEM: {mem:5.1f}%", curses.color_pair(2))
+        except curses.error:
+            pass
         draw_bar_vertical(stdscr, col_width + 2, 10, bar_height, mem, 2)
 
         temp = get_cpu_temp()
@@ -133,33 +160,53 @@ def draw_screen(stdscr):
         processes = len(psutil.pids())
 
         y_base = 9
-        if temp is not None:
-            stdscr.addstr(y_base, col_width*2 + 1, f"Temp: {temp:.1f} C", curses.color_pair(7)); y_base += 1
-        if freq is not None:
-            stdscr.addstr(y_base, col_width*2 + 1, f"Freq: {freq} MHz", curses.color_pair(7)); y_base += 1
-        if volt is not None:
-            stdscr.addstr(y_base, col_width*2 + 1, f"Volt: {volt}", curses.color_pair(7)); y_base += 1
-        stdscr.addstr(y_base, col_width*2 + 1, f"RaspMesh: {'YES' if raspmesh else 'NO'}", curses.color_pair(7)); y_base += 1
-        stdscr.addstr(y_base, col_width*2 + 1, f"Uptime: {int(uptime//3600)}h", curses.color_pair(7)); y_base += 1
-        stdscr.addstr(y_base, col_width*2 + 1, f"LoadAvg: {load1:.2f}", curses.color_pair(7)); y_base += 1
-        stdscr.addstr(y_base, col_width*2 + 1, f"Processes: {processes}", curses.color_pair(7)); y_base += 1
-        stdscr.addstr(y_base, col_width*2 + 1, f"IP:   {ip}", curses.color_pair(7))
+        for info in [
+            (f"Temp: {temp:.1f} C" if temp is not None else None),
+            (f"Freq: {freq} MHz" if freq is not None else None),
+            (f"Volt: {volt}" if volt is not None else None),
+            f"RaspMesh: {'YES' if raspmesh else 'NO'}",
+            f"Uptime: {int(uptime//3600)}h",
+            f"LoadAvg: {load1:.2f}",
+            f"Processes: {processes}",
+            f"IP:   {ip}"
+        ]:
+            if info:
+                try:
+                    stdscr.addstr(y_base, col_width*2 + 1, info, curses.color_pair(7))
+                except curses.error:
+                    pass
+                y_base += 1
 
         net = psutil.net_io_counters()
-        stdscr.addstr(9, col_width*3 + 1, f"Sent: {net.bytes_sent // (1024**2)} MB", curses.color_pair(6))
-        stdscr.addstr(10, col_width*3 + 1, f"Recv: {net.bytes_recv // (1024**2)} MB", curses.color_pair(6))
+        try:
+            stdscr.addstr(9, col_width*3 + 1, f"Sent: {net.bytes_sent // (1024**2)} MB", curses.color_pair(6))
+            stdscr.addstr(10, col_width*3 + 1, f"Recv: {net.bytes_recv // (1024**2)} MB", curses.color_pair(6))
+        except curses.error:
+            pass
 
         disk = psutil.disk_usage('/')
-        stdscr.addstr(9, col_width*4 + 1, f"Used: {disk.used // (1024**3)} GB", curses.color_pair(3))
-        stdscr.addstr(10, col_width*4 + 1, f"Free: {disk.free // (1024**3)} GB", curses.color_pair(3))
-        stdscr.addstr(11, col_width*4 + 1, f"{disk.percent}% used", curses.color_pair(3))
+        try:
+            stdscr.addstr(9, col_width*4 + 1, f"Used: {disk.used // (1024**3)} GB", curses.color_pair(3))
+            stdscr.addstr(10, col_width*4 + 1, f"Free: {disk.free // (1024**3)} GB", curses.color_pair(3))
+            stdscr.addstr(11, col_width*4 + 1, f"{disk.percent}% used", curses.color_pair(3))
+        except curses.error:
+            pass
 
-        stdscr.hline(21, 0, '-', width)
+        try:
+            stdscr.hline(21, 0, '-', width)
+        except curses.error:
+            pass
 
         matrix = get_i2c_matrix()
-        stdscr.addstr(22, 2, "I2C Matrix:", curses.color_pair(4))
+        try:
+            stdscr.addstr(22, 2, "I2C Matrix:", curses.color_pair(4))
+        except curses.error:
+            pass
         for i, line in enumerate(matrix):
-            stdscr.addstr(23 + i, 4, line, curses.color_pair(4))
+            try:
+                stdscr.addstr(23 + i, 4, line, curses.color_pair(4))
+            except curses.error:
+                pass
 
         devices = []
         for line in matrix:
@@ -172,18 +219,24 @@ def draw_screen(stdscr):
         det_start_line = 23 + len(matrix) + 1
         box_width = 26
         box_height = len(devices) + 2
-        stdscr.addstr(det_start_line, 2, "+" + "-"*(box_width-2) + "+", curses.color_pair(6))
-        stdscr.addstr(det_start_line + 1, 2, "| Devices [I2C]" + " "*(box_width - len(" Devices I2C") - 3) + "", curses.color_pair(6))
-        for i, dev in enumerate(devices):
-            line = f"| - {dev}" + " "*(box_width - len(dev) - 6) + ""
-            stdscr.addstr(det_start_line + 2 + i, 2, line, curses.color_pair(6))
-        if not devices:
-            stdscr.addstr(det_start_line + 2, 2, "| 0" + " "*(box_width - 10) + "", curses.color_pair(6))
-            box_height += 1
-        stdscr.addstr(det_start_line + box_height, 2, "+" + "-"*(box_width-2) + "+", curses.color_pair(6))
+        try:
+            stdscr.addstr(det_start_line, 2, "+" + "-"*(box_width-2) + "+", curses.color_pair(6))
+            stdscr.addstr(det_start_line + 1, 2, "| Devices [I2C]" + " "*(box_width - len(" Devices I2C") - 3), curses.color_pair(6))
+            for i, dev in enumerate(devices):
+                line = f"| - {dev}" + " "*(box_width - len(dev) - 6)
+                stdscr.addstr(det_start_line + 2 + i, 2, line, curses.color_pair(6))
+            if not devices:
+                stdscr.addstr(det_start_line + 2, 2, "| 0" + " "*(box_width - 10), curses.color_pair(6))
+                box_height += 1
+            stdscr.addstr(det_start_line + box_height, 2, "+" + "-"*(box_width-2) + "+", curses.color_pair(6))
+        except curses.error:
+            pass
 
         start_line = det_start_line + box_height + 1
-        stdscr.addstr(start_line, 2, "GPIO Layout (physical pins 1–40)", curses.color_pair(5))
+        try:
+            stdscr.addstr(start_line, 2, "GPIO Layout (physical pins 1–40)", curses.color_pair(5))
+        except curses.error:
+            pass
         for i, (left, right) in enumerate(GPIO_LAYOUT):
             pin1 = 1 + i * 2
             pin2 = 2 + i * 2
@@ -207,7 +260,10 @@ def draw_screen(stdscr):
                 line += f"{right:<6}"
             else:
                 line += " " * 6
-            stdscr.addstr(start_line + 1 + i, 2, line, curses.color_pair(5))
+            try:
+                stdscr.addstr(start_line + 1 + i, 2, line, curses.color_pair(5))
+            except curses.error:
+                pass
 
         stdscr.refresh()
         time.sleep(1)
