@@ -11,7 +11,7 @@ _____  __  __  ____  _   _
 **RMON** is a terminal-based system monitor for **Raspberry Pi**, inspired by `nmon`, with real-time display of CPU, memory, GPIO states, I2C devices, and more.  
 
 
-![image](https://github.com/user-attachments/assets/9891e171-6d96-4b0d-aa73-2f2cb743241b)
+![image](https://github.com/user-attachments/assets/0414577d-755e-48cd-86db-05c4bc1e58a5)
 
 ---
 
